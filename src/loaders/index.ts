@@ -1,4 +1,3 @@
-// src/loaders/index.ts
 /**
  * Document Loaders
  * 

@@ -42,7 +42,7 @@ app.get("/health", (req, res) => {
  * Main invoke endpoint with file upload support
  * Accepts multipart/form-data with question and PDF files
  */
-app.post("/invoke", upload.array("files", 5), async (req, res) => {
+app.post("/search/documents", upload.array("files", 5), async (req, res) => {
   const uploadedFiles = req.files as Express.Multer.File[] | undefined;
 
   try {
@@ -75,7 +75,7 @@ app.post("/invoke", upload.array("files", 5), async (req, res) => {
     // Process PDF files
     console.log(`📄 Processing ${uploadedFiles.length} PDF file(s)...`);
     const pages = await PDFDocumentLoader.processFiles(uploadedFiles);
-    console.log(`✅ Extracted ${pages.length} pages from ${uploadedFiles.length} document(s)`);
+    console.log(`Extracted ${pages.length} pages from ${uploadedFiles.length} document(s)`);
 
     // Format pages for context
     const context = PDFDocumentLoader.formatPagesForContext(pages);
@@ -143,9 +143,9 @@ app.post("/invoke", upload.array("files", 5), async (req, res) => {
 const port = Number(process.env.PORT ?? 8787);
 app.listen(port, () => {
   const modelInfo = ModelFactory.getModelInfo();
-  console.log(`🚀 QA Bot API listening on http://localhost:${port}`);
-  console.log(`📊 Provider: ${modelInfo.provider}`);
-  console.log(`🤖 Model: ${modelInfo.model}`);
-  console.log(`🌡️  Temperature: ${modelInfo.temperature}`);
-  console.log(`📁 File upload: Enabled (PDF only, max 5 files)`);
+  console.log(`QA Bot API listening on http://localhost:${port}`);
+  console.log(`Provider: ${modelInfo.provider}`);
+  console.log(`Model: ${modelInfo.model}`);
+  console.log(`Temperature: ${modelInfo.temperature}`);
+  console.log(`File upload: Enabled (PDF only, max 5 files)`);
 });

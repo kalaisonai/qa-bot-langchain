@@ -1,4 +1,3 @@
-// src/loaders/pdf.loader.ts
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import { Document } from "@langchain/core/documents";
 import { DocumentPage } from "../config/index.js";

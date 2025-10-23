@@ -1,4 +1,3 @@
-// src/models/index.ts
 /**
  * AI Models
  * 
