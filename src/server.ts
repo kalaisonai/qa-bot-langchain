@@ -18,7 +18,7 @@ app.get("/health", (req, res) => {
   });
 });
 
-app.post("/invoke", async (req, res) => {
+app.post("/search/document", async (req, res) => {
   const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   
   try {
@@ -84,8 +84,8 @@ const serverUrl = process.env.SERVER_URL ?? `http://${host}:${port}`;
 
 app.listen(port, () => {
   const modelInfo = getModelInfo();
-  console.log(`🚀 QA Bot API listening on ${serverUrl}`);
-  console.log(`📊 Provider: ${modelInfo.provider}`);
-  console.log(`🤖 Model: ${modelInfo.model}`);
-  console.log(`🌡️  Temperature: ${modelInfo.temperature}`);
+  console.log(`QA Bot API listening on ${serverUrl}`);
+  console.log(`Provider: ${modelInfo.provider}`);
+  console.log(`Model: ${modelInfo.model}`);
+  console.log(`Temperature: ${modelInfo.temperature}`);
 });
