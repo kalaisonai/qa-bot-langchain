@@ -6,7 +6,7 @@ import {
 } from "@langchain/core/prompts";
 import { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import { Runnable } from "@langchain/core/runnables";
-import { SYSTEM_PROMPT, HUMAN_PROMPT, PROMPTS, PromptType } from "./prompts.js";
+import { SYSTEM_PROMPT, HUMAN_PROMPT, PROMPTS, PromptType } from "./config/prompts.js";
 
 export type QAInputs = { document: string; question: string };
 

@@ -1,9 +1,8 @@
+// src/models/index.ts
 /**
- * Custom Models Export
- * Add your custom chat model implementations here
+ * AI Models
+ * 
+ * This package contains model factory and configurations for different AI providers.
  */
 
-export { ChatTestLeaf, createTestLeafModel, type TestLeafConfig } from "./testleaf.js";
-
-// Add more custom models as needed:
-// export { ChatAnotherAPI, createAnotherAPIModel } from "./another-api.js";
+export { ModelFactory } from "./factory.js";
