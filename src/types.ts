@@ -15,5 +15,5 @@ export type InvokeResult = {
   output: string;
   model: string;
   provider: string;
-  promptType?: string;
+  promptType: string;
 };

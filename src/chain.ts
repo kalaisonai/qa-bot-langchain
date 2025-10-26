@@ -48,7 +48,6 @@ function buildChainInternal(
   
   const system = SystemMessagePromptTemplate.fromTemplate(systemPrompt);
   const human = HumanMessagePromptTemplate.fromTemplate(HUMAN_PROMPT);
-  
   const prompt = ChatPromptTemplate.fromMessages([system, human]);
 
   // Optimized pipeline: prompt -> model -> parser

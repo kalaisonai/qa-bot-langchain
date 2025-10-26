@@ -18,7 +18,7 @@ export function createChatModel(): BaseChatModel {
   switch (provider) {
     case "openai": {
       const apiKey = process.env.OPENAI_API_KEY;
-      const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+      const model = process.env.OPENAI_MODEL;
 
       if (!apiKey) {
         throw new Error("OPENAI_API_KEY is required when MODEL_PROVIDER=openai");
@@ -28,11 +28,9 @@ export function createChatModel(): BaseChatModel {
         apiKey,
         model,
         temperature,
-        maxTokens: Number(process.env.MAX_TOKENS) || undefined
       }) as unknown as BaseChatModel;
     }
 
-    case "claude":
     case "anthropic": {
       const apiKey = process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY;
       const model = process.env.ANTHROPIC_MODEL || process.env.CLAUDE_MODEL || "claude-3-5-sonnet-20241022";
@@ -51,7 +49,7 @@ export function createChatModel(): BaseChatModel {
 
     case "groq": {
       const apiKey = process.env.GROQ_API_KEY;
-      const model = process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile";
+      const model = process.env.GROQ_MODEL;
 
       if (!apiKey) {
         throw new Error("GROQ_API_KEY is required when MODEL_PROVIDER=groq");
@@ -61,7 +59,6 @@ export function createChatModel(): BaseChatModel {
         apiKey,
         model,
         temperature,
-        maxTokens: Number(process.env.MAX_TOKENS) || undefined
       }) as unknown as BaseChatModel;
     }
 
@@ -89,12 +86,11 @@ export function getModelInfo(): {
     case "openai":
       model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
       break;
-    case "claude":
     case "anthropic":
       model = process.env.ANTHROPIC_MODEL || process.env.CLAUDE_MODEL || "claude-3-5-sonnet-20241022";
       break;
     case "groq":
-      model = process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile";
+      model = process.env.GROQ_MODEL ?? "meta-llama/llama-4-maverick-17b-128e-instruct";
       break;
   }
 
