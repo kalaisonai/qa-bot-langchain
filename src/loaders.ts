@@ -15,10 +15,6 @@ async function getLoader(type: string) {
         const { DocxLoader } = await import("@langchain/community/document_loaders/fs/docx");
         loaderCache.set(type, DocxLoader);
         break;
-      case "csv":
-        const { CSVLoader } = await import("@langchain/community/document_loaders/fs/csv");
-        loaderCache.set(type, CSVLoader);
-        break;
     }
   }
   return loaderCache.get(type);
@@ -49,26 +45,6 @@ export async function loadDocumentToString(filePath: string): Promise<string> {
         .map((d: Document) => d.pageContent.trim())
         .filter((content: string) => content.length > 0)
         .join("\n\n");
-    }
-
-    if (ext === ".csv") {
-      const CSVLoader = await getLoader("csv");
-      const docs = await new CSVLoader(filePath).load();
-      
-      return docs
-        .map((d: Document) => d.pageContent)
-        .join("\n");
-    }
-
-    if (ext === ".json") {
-      const raw = await fs.readFile(filePath, "utf8");
-      const data = JSON.parse(raw);
-      return JSON.stringify(data, null, 2);
-    }
-
-    if (ext === ".md" || ext === ".markdown") {
-      const raw = await fs.readFile(filePath, "utf8");
-      return raw.trim();
     }
 
     // Plain text fallback (optimized for large files)

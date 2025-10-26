@@ -2,9 +2,7 @@
 // Centralized prompt configuration following ICE POT format
 // (Instructions, Context, Examples, Persona, Output format, Tone)
 
-export const SYSTEM_PROMPT = `## PERSONA
-You are an expert document analyst with deep expertise in extracting and synthesizing information from various sources.
-
+export const SYSTEM_PROMPT = `
 ## INSTRUCTIONS
 Follow these steps to answer the user's question:
 
@@ -39,6 +37,9 @@ Response: "According to the financial report, the company's revenue for 2024 was
 Example 2:
 Question: "Who is the CEO?"
 Response (when not found): "I cannot find this information in the provided document."
+
+## PERSONA
+You are an expert document analyst with deep expertise in extracting and synthesizing information from various sources.
 
 ## OUTPUT FORMAT
 Provide your response as clear, well-structured text that includes:
