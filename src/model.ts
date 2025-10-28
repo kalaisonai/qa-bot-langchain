@@ -2,7 +2,7 @@ import { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import { ChatGroq } from "@langchain/groq";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatAnthropic } from "@langchain/anthropic";
-
+import { ChatTestleaf } from "./testleaf.model.js";
 /**
  * Optimized model creation with switch case for all providers
  */
@@ -62,6 +62,23 @@ export function createChatModel(): BaseChatModel {
       }) as unknown as BaseChatModel;
     }
 
+    case "testleaf": {
+        const apiKey = process.env.TESTLEAF_API_KEY;
+        const model = process.env.TESTLEAF_MODEL ?? "gpt-4o-mini";
+
+        if (!apiKey) {
+          throw new Error("TESTLEAF_API_KEY is required when MODEL_PROVIDER=testleaf");
+        }
+
+        return new ChatTestleaf({
+          apiKey,
+          model,
+          temperature,
+          maxTokens: Number(process.env.MAX_TOKENS) || 4096
+        }) as unknown as BaseChatModel;
+      }
+
+
     default:
       throw new Error(
         `Unsupported MODEL_PROVIDER: "${provider}". ` +
@@ -91,6 +108,9 @@ export function getModelInfo(): {
       break;
     case "groq":
       model = process.env.GROQ_MODEL ?? "meta-llama/llama-4-maverick-17b-128e-instruct";
+      break;
+    case "testleaf":
+      model = process.env.TESTLEAF_MODEL ?? "gpt-4o-mini";
       break;
   }
 
