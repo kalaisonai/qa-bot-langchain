@@ -1,0 +1,287 @@
+.message {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.user-message {
+  flex-direction: row-reverse;
+}
+
+.assistant-message {
+  flex-direction: row;
+}
+
+.message-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.user-message .message-avatar {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.assistant-message .message-avatar {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.message-content {
+  max-width: 70%;
+  display: flex;
+  flex-direction: column;
+}
+
+.user-message .message-content {
+  align-items: flex-end;
+}
+
+.assistant-message .message-content {
+  align-items: flex-start;
+}
+
+.message-header {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-bottom: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.message-role {
+  font-weight: 600;
+}
+
+.message-time {
+  opacity: 0.7;
+}
+
+.message-body {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-lg);
+  line-height: 1.6;
+  word-wrap: break-word;
+  box-shadow: var(--shadow-sm);
+}
+
+.user-message .message-body {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  color: white;
+  border-bottom-right-radius: 0.25rem;
+}
+
+.assistant-message .message-body {
+  background: var(--background-color);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-bottom-left-radius: 0.25rem;
+}
+
+.plain-text {
+  white-space: pre-wrap;
+  font-size: 0.95rem;
+}
+
+.markdown-content {
+  font-size: 0.95rem;
+}
+
+/* Markdown headings */
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  margin-top: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+  font-weight: 600;
+}
+
+.markdown-content h1 { font-size: 1.5rem; }
+.markdown-content h2 { font-size: 1.3rem; }
+.markdown-content h3 { font-size: 1.1rem; }
+
+/* Markdown paragraphs */
+.markdown-content p {
+  margin-bottom: var(--spacing-xs);
+}
+
+/* Markdown lists */
+.markdown-content ul,
+.markdown-content ol {
+  margin-left: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+}
+
+.markdown-content li {
+  margin-bottom: 0.25rem;
+}
+
+/* Markdown code blocks */
+.markdown-content code {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 0.2rem 0.4rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+.assistant-message .markdown-content code {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.user-message .markdown-content code {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.markdown-content pre {
+  background: rgba(0, 0, 0, 0.05);
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  margin-bottom: var(--spacing-sm);
+}
+
+.markdown-content pre code {
+  background: transparent;
+  padding: 0;
+}
+
+/* Markdown tables */
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: var(--spacing-sm) 0;
+  font-size: 0.9rem;
+  background: var(--surface-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.markdown-content thead {
+  background: var(--primary-color);
+  color: white;
+}
+
+.markdown-content th {
+  padding: var(--spacing-sm);
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid var(--primary-color);
+}
+
+.markdown-content td {
+  padding: var(--spacing-sm);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.markdown-content tbody tr:hover {
+  background: var(--background-color);
+}
+
+.markdown-content tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Markdown blockquotes */
+.markdown-content blockquote {
+  border-left: 3px solid var(--primary-color);
+  padding-left: var(--spacing-md);
+  margin: var(--spacing-sm) 0;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Markdown links */
+.markdown-content a {
+  color: var(--primary-color);
+  text-decoration: underline;
+  transition: opacity 0.2s ease;
+}
+
+.markdown-content a:hover {
+  opacity: 0.8;
+}
+
+.user-message .markdown-content a {
+  color: white;
+  text-decoration: underline;
+}
+
+/* Markdown horizontal rules */
+.markdown-content hr {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: var(--spacing-md) 0;
+}
+
+/* Markdown strong and emphasis */
+.markdown-content strong {
+  font-weight: 700;
+}
+
+.markdown-content em {
+  font-style: italic;
+}
+
+/* ============================================
+   RESPONSIVE MESSAGE STYLES
+   ============================================ */
+@media (max-width: 768px) {
+  .message-content {
+    max-width: 85%;
+  }
+  
+  .message-avatar {
+    width: 35px;
+    height: 35px;
+    font-size: 1.2rem;
+  }
+  
+  .markdown-content table {
+    font-size: 0.8rem;
+  }
+  
+  .markdown-content th,
+  .markdown-content td {
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .message-content {
+    max-width: 90%;
+  }
+  
+  .message-avatar {
+    width: 30px;
+    height: 30px;
+    font-size: 1rem;
+  }
+  
+  .markdown-content table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}

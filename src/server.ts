@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import cors from "cors";
 import { MongoClient } from "mongodb";
 import { createChatModel, getModelInfo } from "./lib/models/index.js";
 import { buildQAChain, loadDocumentToString } from "./lib/index.js";
@@ -27,6 +28,7 @@ import { ConversationalRAGChainManager } from "./lib/conversationalRAGChain.js";
 import { HumanMessage, AIMessage } from "@langchain/core/messages";
 
 const app = express();
+app.use(cors()); // Enable CORS for React frontend
 app.use(express.json({ limit: "10mb" }));
 
 // Initialize retrieval pipeline (will be set up on server start)
@@ -164,7 +166,7 @@ app.post("/chat", async (req, res) => {
     const { response, searchResults } = await ragChain.chat(
       parsed.message,
       "hybrid",
-      10, // topK
+      25, // topK - retrieve 25 candidates for better coverage
       requestId
     );
 

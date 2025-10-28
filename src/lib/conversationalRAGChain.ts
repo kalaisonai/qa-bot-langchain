@@ -51,8 +51,8 @@ function formatSearchResults(results: SearchResultItem[]): string {
 
   return results
     .map((result, idx) => {
-      // Extract key info from content (first 200 chars)
-      const contentPreview = result.content.substring(0, 200).replace(/\n/g, " ");
+      // Extract key info from fullContent (first 200 chars)
+      const contentPreview = result.fullContent.substring(0, 200).replace(/\n/g, " ");
       
       return `${idx + 1}. ${result.fileName}
    Email: ${result.email}
@@ -98,7 +98,7 @@ export class ConversationalRAGChainManager {
   async chat(
     input: string,
     searchType: "keyword" | "vector" | "hybrid" = "hybrid",
-    topK: number = 10,
+    topK: number = 25,
     traceId?: string
   ): Promise<{ response: string; searchResults: SearchResultItem[] }> {
     const requestId = traceId || `chat_${Date.now()}`;

@@ -35,7 +35,7 @@ export class VectorSearchEngine {
           fileName: doc.metadata.fileName || "Unknown",
           email: doc.metadata.email || "Not found",
           phoneNumber: doc.metadata.phoneNumber || "Not found",
-          content: this.extractSnippet(doc.pageContent),
+          fullContent: this.extractSnippet(doc.pageContent),
           score: normalizedScore,
           matchType: "vector",
         };

@@ -63,7 +63,7 @@ export class KeywordSearchEngine {
           fileName: fileName || "Unknown",
           email: email || "Not found",
           phoneNumber: doc.phoneNumber || "Not found",
-          content: this.extractSnippet(content, keywords),
+          fullContent: this.extractSnippet(content, keywords),
           score: normalizedScore,
           matchType: "keyword",
         };

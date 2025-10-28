@@ -189,9 +189,32 @@ Remember:
 - Only set matchesCriteria=true if ALL query requirements are met
 - Provide honest scoring based on evidence in the resume
 - Include clear reasoning with specific evidence from the resume content
-- Return valid JSON following the exact schema specified
 
-Analyze now and return your response as a JSON object.`;
+## CRITICAL OUTPUT REQUIREMENT
+You MUST return ONLY a valid JSON object. Do not include any markdown formatting, code blocks, or explanatory text.
+Return ONLY the raw JSON object starting with {{ and ending with }}.
+
+The JSON must follow this exact structure:
+{{
+  "matches": [
+    {{
+      "fileName": "resume_name.pdf",
+      "relevanceScore": 0.95,
+      "matchesCriteria": true,
+      "reasoning": "Explanation here",
+      "extractedInfo": {{
+        "currentCompany": "Company Name",
+        "skills": ["skill1", "skill2"],
+        "experience": "X years",
+        "keyHighlights": ["highlight1"]
+      }}
+    }}
+  ],
+  "summary": "Overall summary"
+}}
+
+Return your JSON response now:`;
+
 
     return ChatPromptTemplate.fromMessages([
       ["system", systemPrompt],
@@ -229,12 +252,12 @@ Analyze now and return your response as a JSON object.`;
 
     console.log(`[${traceId}] [LLM Reranker] Analyzing ${candidates.length} candidates with LLM`);
 
-    // Format resumes for LLM analysis - truncate long content
+    // Format resumes for LLM analysis - truncate long fullContent
     const resumesContext = candidates
       .map((candidate, index) => {
-        const truncatedContent = candidate.content.length > 3000
-          ? candidate.content.slice(0, 3000) + "\n...[content truncated for analysis]"
-          : candidate.content;
+        const truncatedContent = candidate.fullContent.length > 3000
+          ? candidate.fullContent.slice(0, 3000) + "\n...[content truncated for analysis]"
+          : candidate.fullContent;
 
         return `
 ### Resume ${index + 1}: ${candidate.fileName}
@@ -264,14 +287,27 @@ ${truncatedContent}
       // Parse JSON response
       let parsedResponse: LLMRerankResponse;
       try {
-        // Extract JSON from markdown code blocks if present
-        const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-        const jsonStr = jsonMatch ? jsonMatch[1] : responseText;
+        // Try multiple extraction strategies
+        let jsonStr = responseText;
+        
+        // Strategy 1: Extract from markdown code blocks
+        const codeBlockMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+        if (codeBlockMatch) {
+          jsonStr = codeBlockMatch[1];
+        } else {
+          // Strategy 2: Find JSON object in text (look for { ... })
+          const jsonObjectMatch = responseText.match(/\{[\s\S]*\}/);
+          if (jsonObjectMatch) {
+            jsonStr = jsonObjectMatch[0];
+          }
+        }
+        
         const rawJson = JSON.parse(jsonStr.trim());
         parsedResponse = LLMRerankResponseSchema.parse(rawJson);
       } catch (parseError) {
         console.error(`[${traceId}] [LLM Reranker] Failed to parse LLM response:`, parseError);
         console.error(`[${traceId}] [LLM Reranker] Raw response preview:`, responseText.slice(0, 500));
+        console.log(`[${traceId}] [LLM Reranker] Full response:`, responseText);
         
         // Fallback: return original results with warning
         return {
@@ -295,7 +331,7 @@ ${truncatedContent}
         // Only include results that match ALL criteria
         if (!match.matchesCriteria) {
           console.log(
-            `[${traceId}] [LLM Reranker] ⛔ Filtered out ${match.fileName} (score: ${match.relevanceScore})`
+            `[${traceId}] [LLM Reranker] - Filtered out ${match.fileName} (score: ${match.relevanceScore})`
           );
           console.log(`[${traceId}] [LLM Reranker]    Reason: ${match.reasoning}`);
           continue;

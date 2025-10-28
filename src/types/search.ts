@@ -20,7 +20,7 @@ export interface SearchResultItem {
   fileName: string;
   email: string;
   phoneNumber: string;
-  content: string;
+  fullContent: string;
   score: number;
   matchType?: "keyword" | "vector" | "hybrid";
 }

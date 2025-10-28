@@ -123,9 +123,9 @@ export class HybridSearchEngine {
         const existing = mergedMap.get(result.fileName)!;
         existing.score = existing.score + weightedScore;
         
-        // Use the longer content snippet (more context)
-        if (result.content.length > existing.content.length) {
-          existing.content = result.content;
+        // Use the longer fullContent snippet (more context)
+        if (result.fullContent.length > existing.fullContent.length) {
+          existing.fullContent = result.fullContent;
         }
       } else {
         // Document only in keyword search
