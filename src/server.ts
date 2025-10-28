@@ -12,9 +12,19 @@ import {
   SearchRequestSchema,
   SearchRequest,
   SearchResponse,
-  ErrorResponse 
+  ErrorResponse,
+  ConversationalQuerySchema,
+  ConversationalQueryBody,
+  ConversationalQueryResult,
+  GetConversationHistorySchema,
+  GetConversationHistoryBody,
+  ConversationHistoryResult,
+  ChatMessage
 } from "./types/index.js";
 import { config } from "./config/index.js";
+import { conversationStore } from "./lib/memory/index.js";
+import { ConversationalRAGChainManager } from "./lib/conversationalRAGChain.js";
+import { HumanMessage, AIMessage } from "@langchain/core/messages";
 
 const app = express();
 app.use(express.json({ limit: "10mb" }));
@@ -30,7 +40,8 @@ app.get("/health", (req, res) => {
     status: "healthy",
     timestamp: new Date().toISOString(),
     model: modelInfo,
-    retrievalPipeline: retrievalPipeline ? "ready" : "not initialized"
+    retrievalPipeline: retrievalPipeline ? "ready" : "not initialized",
+    activeConversations: conversationStore.size()
   });
 });
 
@@ -112,6 +123,170 @@ app.post("/search/resumes", async (req, res) => {
   }
 });
 
+// Conversational chat endpoint with memory and RAG
+app.post("/chat", async (req, res) => {
+  const requestId = `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
+  try {
+    console.log(`\n[${requestId}] === CONVERSATIONAL RAG CHAT REQUEST ===`);
+    console.log(`Timestamp: ${new Date().toISOString()}`);
+    console.log(`Request Body:`, JSON.stringify(req.body, null, 2));
+
+    const parsed = ConversationalQuerySchema.parse(req.body as ConversationalQueryBody);
+    
+    // Check if retrieval pipeline is ready
+    if (!retrievalPipeline) {
+      throw new Error("Retrieval pipeline not initialized. Please ensure MongoDB is connected.");
+    }
+
+    // Generate or use provided conversation ID
+    const conversationId = parsed.conversationId || `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const isNewConversation = !parsed.conversationId;
+    
+    console.log(`[${requestId}] Conversation ID: ${conversationId} ${isNewConversation ? '(NEW)' : '(EXISTING)'}`);
+    console.log(`[${requestId}] Message: "${parsed.message}"`);
+
+    // Get or create memory for this conversation
+    const memoryManager = conversationStore.getOrCreate(conversationId);
+    
+    // Get model info
+    const modelInfo = getModelInfo();
+    console.log(`[${requestId}] Using model: ${modelInfo.provider}/${modelInfo.model}`);
+
+    // Create chat model and conversational RAG chain
+    const model = createChatModel();
+    const ragChain = new ConversationalRAGChainManager(model, memoryManager, retrievalPipeline);
+
+    console.log(`[${requestId}] Processing with conversational RAG chain...`);
+    const startTime = Date.now();
+
+    // Execute the chat with RAG (default to hybrid search)
+    const { response, searchResults } = await ragChain.chat(
+      parsed.message,
+      "hybrid",
+      10, // topK
+      requestId
+    );
+
+    const duration = Date.now() - startTime;
+    console.log(`[${requestId}] Chain processing completed in ${duration}ms`);
+    console.log(`[${requestId}] Response length: ${response.length} characters`);
+    console.log(`[${requestId}] Search results used: ${searchResults.length} candidates`);
+
+    // Get message count
+    const messageCount = await memoryManager.getMessageCount();
+
+    // Log history if requested
+    if (parsed.includeHistory) {
+      await ragChain.logHistory();
+    }
+
+    const result: ConversationalQueryResult = {
+      response,
+      conversationId,
+      messageCount,
+      model: modelInfo.model,
+      provider: modelInfo.provider,
+    };
+
+    console.log(`[${requestId}] Sending response to client`);
+    console.log(`====================================\n`);
+
+    res.json(result);
+  } catch (err: any) {
+    console.error(`\n[${requestId}] === CHAT ERROR ===`);
+    console.error(`Error:`, err.message ?? String(err));
+    console.error(`Stack:`, err.stack);
+    console.error(`====================================\n`);
+
+    res.status(400).json({ error: err.message ?? String(err) });
+  }
+});
+
+// Get conversation history endpoint
+app.post("/chat/history", async (req, res) => {
+  const requestId = `history_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
+  try {
+    console.log(`\n[${requestId}] === GET CONVERSATION HISTORY ===`);
+    console.log(`Request Body:`, JSON.stringify(req.body, null, 2));
+
+    const parsed = GetConversationHistorySchema.parse(req.body as GetConversationHistoryBody);
+    
+    console.log(`[${requestId}] Conversation ID: ${parsed.conversationId}`);
+
+    // Check if conversation exists
+    if (!conversationStore.has(parsed.conversationId)) {
+      return res.status(404).json({ 
+        error: `Conversation not found: ${parsed.conversationId}` 
+      });
+    }
+
+    // Get memory manager
+    const memoryManager = conversationStore.getOrCreate(parsed.conversationId);
+    
+    // Get all messages
+    const messages = await memoryManager.getMessages();
+    
+    // Convert to API format
+    const chatMessages: ChatMessage[] = messages.map(msg => ({
+      role: msg instanceof HumanMessage ? "user" : "assistant",
+      content: msg.content.toString(),
+    }));
+
+    const result: ConversationHistoryResult = {
+      conversationId: parsed.conversationId,
+      messages: chatMessages,
+      messageCount: chatMessages.length,
+    };
+
+    console.log(`[${requestId}] Retrieved ${chatMessages.length} messages`);
+    console.log(`📤 [${requestId}] Sending history to client\n`);
+
+    res.json(result);
+  } catch (err: any) {
+    console.error(`\n[${requestId}] === HISTORY ERROR ===`);
+    console.error(`Error:`, err.message ?? String(err));
+    console.error(`Stack:`, err.stack);
+    console.error(`====================================\n`);
+
+    res.status(400).json({ error: err.message ?? String(err) });
+  }
+});
+
+// Delete conversation endpoint
+app.delete("/chat/:conversationId", async (req, res) => {
+  const requestId = `delete_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const conversationId = req.params.conversationId;
+  
+  try {
+    console.log(`\n[${requestId}] === DELETE CONVERSATION ===`);
+    console.log(`Conversation ID: ${conversationId}`);
+
+    const deleted = conversationStore.delete(conversationId);
+    
+    if (!deleted) {
+      return res.status(404).json({ 
+        error: `Conversation not found: ${conversationId}` 
+      });
+    }
+
+    console.log(`[${requestId}] Conversation deleted successfully\n`);
+
+    res.json({ 
+      success: true, 
+      conversationId,
+      message: "Conversation deleted successfully" 
+    });
+  } catch (err: any) {
+    console.error(`\n[${requestId}] === DELETE ERROR ===`);
+    console.error(`Error:`, err.message ?? String(err));
+    console.error(`====================================\n`);
+
+    res.status(400).json({ error: err.message ?? String(err) });
+  }
+});
+
 app.post("/search/document", async (req, res) => {
   const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   
@@ -158,7 +333,7 @@ app.post("/search/document", async (req, res) => {
       promptType: parsed.promptType || "default"
     };
 
-    console.log(`📤 [${requestId}] Sending response to client`);
+    console.log(`[${requestId}] Sending response to client`);
     console.log(`====================================\n`);
 
     res.json(result);
@@ -225,13 +400,13 @@ async function initializeRetrievalPipeline() {
     if (config.llmReranking.enabled) {
       try {
         chatModel = createChatModel();
-        console.log(`✓ LLM re-ranking enabled with ${config.modelProvider} model`);
+        console.log(`LLM re-ranking enabled with ${config.modelProvider} model`);
       } catch (error) {
-        console.warn("⚠️  Failed to initialize chat model for LLM re-ranking:", error);
-        console.warn("   LLM re-ranking will be disabled");
+        console.warn("Failed to initialize chat model for LLM re-ranking:", error);
+        console.warn("LLM re-ranking will be disabled");
       }
     } else {
-      console.log("ℹ️  LLM re-ranking disabled");
+      console.log("LLM re-ranking disabled");
     }
     
     // Initialize retrieval pipeline with hybrid config and optional LLM re-ranking

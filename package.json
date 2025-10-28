@@ -16,7 +16,8 @@
     "ingest": "tsx src/pipelines/ingestion/pipeline.ts",
     "ingest:clear": "tsx src/pipelines/ingestion/pipeline.ts --clear",
     "create-index": "tsx src/scripts/createVectorIndex.ts",
-    "verify-index": "tsx src/scripts/createVectorIndex.ts verify"
+    "verify-index": "tsx src/scripts/createVectorIndex.ts verify",
+    "demo:chat": "tsx src/scripts/chatMemoryDemo.ts"
   },
   "dependencies": {
     "@langchain/core": "^0.3.22",
