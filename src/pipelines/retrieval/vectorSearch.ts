@@ -2,7 +2,7 @@ import { ResumeVectorStore } from "../../lib/vectorstore/index.js";
 import { SearchResultItem, SearchMetadata } from "./types.js";
 
 /**
- * Pure vector search engine (PM25)
+ * Pure vector search engine
  */
 export class VectorSearchEngine {
   private vectorStore: ResumeVectorStore;

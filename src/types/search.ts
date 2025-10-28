@@ -5,8 +5,8 @@ import { z } from "zod";
  */
 export const SearchRequestSchema = z.object({
   query: z.string().min(1, "Query cannot be empty"),
-  searchType: z.enum(["keyword", "pm25", "hybrid"], {
-    errorMap: () => ({ message: "searchType must be 'keyword', 'pm25', or 'hybrid'" })
+  searchType: z.enum(["keyword", "vector", "hybrid"], {
+    errorMap: () => ({ message: "searchType must be 'keyword', 'vector', or 'hybrid'" })
   }),
   topK: z.number().int().positive().optional().default(3)
 });

@@ -70,6 +70,12 @@ export const config = {
     keywordWeight: Number(process.env.HYBRID_KEYWORD_WEIGHT) || 0.3,
   },
 
+  // LLM Re-ranking Configuration
+  llmReranking: {
+    enabled: process.env.LLM_RERANKING_ENABLED !== "false", // Default: true
+    retrievalTopK: Number(process.env.LLM_RETRIEVAL_TOP_K) || 10, // Retrieve more for LLM to filter
+  },
+
   // Server
   server: {
     url: process.env.SERVER_URL || "http://localhost:8787",

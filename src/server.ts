@@ -220,13 +220,32 @@ async function initializeRetrievalPipeline() {
     // Initialize vector store
     await vectorStore.initialize();
     
-    // Initialize retrieval pipeline with hybrid config
+    // Create chat model for LLM re-ranking (if enabled)
+    let chatModel = undefined;
+    if (config.llmReranking.enabled) {
+      try {
+        chatModel = createChatModel();
+        console.log(`✓ LLM re-ranking enabled with ${config.modelProvider} model`);
+      } catch (error) {
+        console.warn("⚠️  Failed to initialize chat model for LLM re-ranking:", error);
+        console.warn("   LLM re-ranking will be disabled");
+      }
+    } else {
+      console.log("ℹ️  LLM re-ranking disabled");
+    }
+    
+    // Initialize retrieval pipeline with hybrid config and optional LLM re-ranking
     retrievalPipeline = new RetrievalPipeline(
       collection,
       vectorStore,
       {
         vectorWeight: config.hybridSearch.vectorWeight,
         keywordWeight: config.hybridSearch.keywordWeight
+      },
+      chatModel,
+      {
+        enabled: config.llmReranking.enabled,
+        retrievalTopK: config.llmReranking.retrievalTopK
       }
     );
     
