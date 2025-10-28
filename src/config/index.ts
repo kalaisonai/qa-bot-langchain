@@ -58,6 +58,18 @@ export const config = {
     folder: process.env.DOCUMENTS_FOLDER || "./documents",
   },
 
+  // Ingestion
+  ingestion: {
+    batchSize: Number(process.env.INGESTION_BATCH_SIZE) || 10,
+    requireContactInfo: process.env.REQUIRE_CONTACT_INFO !== "false", // Default: true
+  },
+
+  // Hybrid Search Weights
+  hybridSearch: {
+    vectorWeight: Number(process.env.HYBRID_VECTOR_WEIGHT) || 0.7,
+    keywordWeight: Number(process.env.HYBRID_KEYWORD_WEIGHT) || 0.3,
+  },
+
   // Server
   server: {
     url: process.env.SERVER_URL || "http://localhost:8787",

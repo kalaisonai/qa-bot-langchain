@@ -120,7 +120,7 @@ export class ResumeVectorStore {
       fullContent: string;
       fileName: string;
     }>,
-    batchSize: number = 10
+    batchSize: number = 1
   ): Promise<void> {
     if (!this.vectorStore) {
       throw new Error("Vector store not initialized. Call initialize() first.");

@@ -74,7 +74,9 @@ export async function ingestResumes(clearExisting: boolean = false): Promise<voi
     
     let successCount = 0;
     let errorCount = 0;
+    let skippedCount = 0;
     const warnings: Array<{ fileName: string; warnings: string[] }> = [];
+    const skipped: Array<{ fileName: string; reason: string }> = [];
     
     // Process resumes concurrently for better performance
     const results = await Promise.allSettled(
@@ -88,6 +90,20 @@ export async function ingestResumes(clearExisting: boolean = false): Promise<voi
         
         // Extract information using regex
         const extractedInfo = extractResumeInfo(content);
+        
+        // Check if at least email or phone number is found
+        const hasEmail = !!extractedInfo.email;
+        const hasPhone = !!extractedInfo.phoneNumber;
+        
+        if (!hasEmail && !hasPhone) {
+          console.log(`    ⚠️  SKIPPED: No email or phone number found`);
+          console.log();
+          return { 
+            skipped: true, 
+            fileName,
+            reason: "No contact information found (email or phone number required)"
+          };
+        }
         
         // Validate metadata
         const validation = validateResumeMetadata(extractedInfo);
@@ -109,21 +125,31 @@ export async function ingestResumes(clearExisting: boolean = false): Promise<voi
         }
         console.log();
         
-        return { resumeData, validation, fileName };
+        return { resumeData, validation, fileName, skipped: false };
       })
     );
     
     // Process results
     for (const result of results) {
       if (result.status === "fulfilled") {
-        resumesData.push(result.value.resumeData);
-        if (result.value.validation.warnings.length > 0) {
-          warnings.push({
+        // Check if resume was skipped
+        if (result.value.skipped) {
+          skipped.push({
             fileName: result.value.fileName,
-            warnings: result.value.validation.warnings
+            reason: result.value.reason!
           });
+          skippedCount++;
+        } else {
+          // Add to resumes data
+          resumesData.push(result.value.resumeData!);
+          if (result.value.validation && result.value.validation.warnings.length > 0) {
+            warnings.push({
+              fileName: result.value.fileName,
+              warnings: result.value.validation.warnings
+            });
+          }
+          successCount++;
         }
-        successCount++;
       } else {
         console.error(`✗ Error:`, result.reason instanceof Error ? result.reason.message : String(result.reason));
         console.log();
@@ -135,10 +161,13 @@ export async function ingestResumes(clearExisting: boolean = false): Promise<voi
     if (resumesData.length > 0) {
       console.log(`🔄 Generating embeddings and storing ${resumesData.length} resume(s)...`);
       
-      // Use batch processing for better performance
-      const batchSize = 10;
+      // Use batch size from config
+      const batchSize = config.ingestion.batchSize;
+      console.log(`   Batch size: ${batchSize}`);
       await vectorStore.addResumesBatch(resumesData, batchSize);
       console.log();
+    } else {
+      console.log("⚠️  No resumes to ingest (all files skipped or failed)\n");
     }
     
     // Summary
@@ -148,9 +177,17 @@ export async function ingestResumes(clearExisting: boolean = false): Promise<voi
     console.log(`📊 Statistics:`);
     console.log(`  - Total files: ${resumeFiles.length}`);
     console.log(`  - Successful: ${successCount}`);
+    console.log(`  - Skipped: ${skippedCount}`);
     console.log(`  - Errors: ${errorCount}`);
     console.log(`  - Embeddings generated: ${resumesData.length}`);
     console.log(`  - Warnings: ${warnings.length}`);
+    
+    if (skipped.length > 0) {
+      console.log(`\n⏭️  Skipped files (no contact info):`);
+      skipped.forEach(({ fileName, reason }) => {
+        console.log(`  - ${fileName}: ${reason}`);
+      });
+    }
     
     if (warnings.length > 0) {
       console.log(`\n⚠️  Files with warnings:`);
