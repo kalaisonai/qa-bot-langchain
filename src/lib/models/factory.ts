@@ -2,6 +2,7 @@ import { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import { ChatGroq } from "@langchain/groq";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatAnthropic } from "@langchain/anthropic";
+import { ChatTestleaf } from "./testleafChat.js";
 
 /**
  * Optimized model creation with switch case for all providers
@@ -16,6 +17,22 @@ export function createChatModel(): BaseChatModel {
   }
 
   switch (provider) {
+    case "testleaf": {
+      const apiKey = process.env.TESTLEAF_API_KEY;
+      const model = process.env.TESTLEAF_MODEL || "gpt-4o-mini";
+
+      if (!apiKey) {
+        throw new Error("TESTLEAF_API_KEY is required when MODEL_PROVIDER=testleaf");
+      }
+
+      return new ChatTestleaf({
+        apiKey,
+        model,
+        temperature,
+        maxTokens: Number(process.env.MAX_TOKENS) || 4096
+      }) as unknown as BaseChatModel;
+    }
+
     case "openai": {
       const apiKey = process.env.OPENAI_API_KEY;
       const model = process.env.OPENAI_MODEL;
@@ -65,7 +82,7 @@ export function createChatModel(): BaseChatModel {
     default:
       throw new Error(
         `Unsupported MODEL_PROVIDER: "${provider}". ` +
-        `Supported providers: openai, claude, groq, `
+        `Supported providers: testleaf, openai, anthropic, groq`
       );
   }
 }
@@ -83,6 +100,9 @@ export function getModelInfo(): {
 
   let model = "unknown";
   switch (provider) {
+    case "testleaf":
+      model = process.env.TESTLEAF_MODEL ?? "gpt-4o-mini";
+      break;
     case "openai":
       model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
       break;

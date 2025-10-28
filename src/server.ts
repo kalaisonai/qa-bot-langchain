@@ -1,9 +1,8 @@
 import "dotenv/config";
 import express from "express";
-import { createChatModel, getModelInfo } from "./model.js";
-import { buildQAChain } from "./chain.js";
-import { loadDocumentToString } from "./loaders.js";
-import { InvokeSchema, InvokeBody, InvokeResult } from "./types.js";
+import { createChatModel, getModelInfo } from "./lib/models/index.js";
+import { buildQAChain, loadDocumentToString } from "./lib/index.js";
+import { InvokeSchema, InvokeBody, InvokeResult } from "./types/index.js";
 
 const app = express();
 app.use(express.json({ limit: "10mb" }));

@@ -1,4 +1,3 @@
-// src/prompts.ts
 // Centralized prompt configuration following ICE POT format
 // (Instructions, Context, Examples, Persona, Output format, Tone)
 
