@@ -32,6 +32,12 @@ export const config = {
     model: process.env.ANTHROPIC_MODEL || process.env.CLAUDE_MODEL || "claude-3-5-sonnet-20241022",
   },
 
+  // Mistral
+  mistral: {
+    apiKey: process.env.MISTRAL_API_KEY || "",
+    embeddingModel: process.env.MISTRAL_EMBEDDING_MODEL || "mistral-embed",
+  },
+
   // MongoDB
   mongodb: {
     uri: process.env.MONGODB_URI || "",
@@ -42,9 +48,9 @@ export const config = {
 
   // Embeddings
   embeddings: {
-    provider: process.env.EMBEDDING_PROVIDER || "openai",
-    model: process.env.EMBEDDING_MODEL || "text-embedding-3-small",
-    dimension: Number(process.env.EMBEDDING_DIMENSION) || 1536,
+    provider: process.env.EMBEDDING_PROVIDER || "mistral",
+    model: process.env.EMBEDDING_MODEL || "mistral-embed",
+    dimension: Number(process.env.EMBEDDING_DIMENSION) || 1024,
   },
 
   // Documents

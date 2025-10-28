@@ -1,2 +1,2 @@
 export { loadDocument, getResumeFiles } from "./documentLoader.js";
-export { extractResumeInfo } from "./extractors.js";
+export { extractResumeInfo, validateResumeMetadata } from "./extractors.js";

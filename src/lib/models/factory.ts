@@ -1,7 +1,8 @@
 import { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import { ChatGroq } from "@langchain/groq";
-import { ChatOpenAI } from "@langchain/openai";
 import { ChatAnthropic } from "@langchain/anthropic";
+import { ChatOpenAI } from "@langchain/openai";
+import { ChatMistralAI } from "@langchain/mistralai";
 import { ChatTestleaf } from "./testleafChat.js";
 
 /**

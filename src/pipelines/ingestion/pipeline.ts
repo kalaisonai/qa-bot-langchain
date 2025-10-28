@@ -1,22 +1,34 @@
 import path from "node:path";
 import { config } from "../../config/index.js";
 import { ResumeVectorStore } from "../../lib/vectorstore/index.js";
-import { loadDocument, getResumeFiles, extractResumeInfo } from "../../utils/index.js";
+import { loadDocument, getResumeFiles, extractResumeInfo, validateResumeMetadata } from "../../utils/index.js";
 
 /**
- * Main ingestion pipeline with vector embeddings using LangChain
+ * Main ingestion pipeline with vector embeddings using Mistral
  */
 export async function ingestResumes(clearExisting: boolean = false): Promise<void> {
-  console.log("Starting resume ingestion pipeline with vector embeddings...\n");
+  console.log("🚀 Starting resume ingestion pipeline with vector embeddings\n");
   
   // Validate configuration
   if (!config.mongodb.uri) {
     throw new Error("MONGODB_URI is not set in .env file");
   }
   
-  if (!config.openai.apiKey) {
-    throw new Error("OPENAI_API_KEY is required for generating embeddings");
+  const embeddingProvider = config.embeddings.provider;
+  const apiKey = embeddingProvider === "mistral" 
+    ? config.mistral.apiKey 
+    : config.openai.apiKey;
+  
+  if (!apiKey) {
+    throw new Error(`${embeddingProvider.toUpperCase()}_API_KEY is required for generating embeddings`);
   }
+  
+  console.log(`📊 Configuration:`);
+  console.log(`  - Database: ${config.mongodb.dbName}.${config.mongodb.collection}`);
+  console.log(`  - Embedding Provider: ${embeddingProvider}`);
+  console.log(`  - Embedding Model: ${config.embeddings.model}`);
+  console.log(`  - Dimension: ${config.embeddings.dimension}`);
+  console.log();
   
   // Initialize LangChain MongoDB Vector Store
   const vectorStore = new ResumeVectorStore({
@@ -24,8 +36,9 @@ export async function ingestResumes(clearExisting: boolean = false): Promise<voi
     dbName: config.mongodb.dbName,
     collectionName: config.mongodb.collection,
     indexName: config.mongodb.vectorIndexName,
+    embeddingProvider: embeddingProvider,
     embeddingModel: config.embeddings.model,
-    apiKey: config.openai.apiKey
+    apiKey: apiKey
   });
   
   try {
@@ -34,23 +47,24 @@ export async function ingestResumes(clearExisting: boolean = false): Promise<voi
     
     // Clear existing data if requested
     if (clearExisting) {
-      console.log("Clearing existing resumes...");
+      console.log("🗑️  Clearing existing resumes...");
       await vectorStore.clearCollection();
       console.log();
     }
     
     // Get all resume files
-    console.log(`Reading documents from: ${config.documents.folder}`);
+    console.log(`📂 Reading documents from: ${config.documents.folder}`);
     const resumeFiles = await getResumeFiles(config.documents.folder);
     
     if (resumeFiles.length === 0) {
-      console.log("No PDF or DOCX files found in documents folder");
+      console.log("⚠️  No PDF or DOCX files found in documents folder");
       return;
     }
     
-    console.log(`Found ${resumeFiles.length} resume(s)\n`);
+    console.log(`✓ Found ${resumeFiles.length} resume(s)\n`);
     
-    // Process each resume
+    // Process each resume with concurrent loading
+    console.log("📝 Processing resumes...\n");
     const resumesData: Array<{
       email: string;
       phoneNumber: string;
@@ -60,18 +74,23 @@ export async function ingestResumes(clearExisting: boolean = false): Promise<voi
     
     let successCount = 0;
     let errorCount = 0;
+    const warnings: Array<{ fileName: string; warnings: string[] }> = [];
     
-    for (const filePath of resumeFiles) {
-      const fileName = path.basename(filePath);
-      
-      try {
-        console.log(`Processing: ${fileName}...`);
+    // Process resumes concurrently for better performance
+    const results = await Promise.allSettled(
+      resumeFiles.map(async (filePath) => {
+        const fileName = path.basename(filePath);
+        
+        console.log(`  Processing: ${fileName}...`);
         
         // Load document content
         const content = await loadDocument(filePath);
         
         // Extract information using regex
         const extractedInfo = extractResumeInfo(content);
+        
+        // Validate metadata
+        const validation = validateResumeMetadata(extractedInfo);
         
         // Create resume data object
         const resumeData = {
@@ -81,39 +100,69 @@ export async function ingestResumes(clearExisting: boolean = false): Promise<voi
           fileName: fileName
         };
         
-        resumesData.push(resumeData);
+        console.log(`    ✓ Email: ${resumeData.email}`);
+        console.log(`    ✓ Phone: ${resumeData.phoneNumber}`);
+        console.log(`    ✓ Content: ${resumeData.fullContent.length} chars`);
         
-        console.log(`Email: ${resumeData.email}`);
-        console.log(`Phone: ${resumeData.phoneNumber}`);
-        console.log(`Content length: ${resumeData.fullContent.length} chars`);
+        if (validation.warnings.length > 0) {
+          console.log(`    ⚠️  Warnings: ${validation.warnings.join(", ")}`);
+        }
         console.log();
         
+        return { resumeData, validation, fileName };
+      })
+    );
+    
+    // Process results
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        resumesData.push(result.value.resumeData);
+        if (result.value.validation.warnings.length > 0) {
+          warnings.push({
+            fileName: result.value.fileName,
+            warnings: result.value.validation.warnings
+          });
+        }
         successCount++;
-        
-      } catch (error) {
-        console.error(`Error processing ${fileName}:`, error instanceof Error ? error.message : String(error));
+      } else {
+        console.error(`✗ Error:`, result.reason instanceof Error ? result.reason.message : String(result.reason));
         console.log();
         errorCount++;
       }
     }
     
-    // Add all resumes with embeddings to MongoDB
+    // Add all resumes with embeddings to MongoDB using batch processing
     if (resumesData.length > 0) {
-      console.log(`Generating embeddings and storing ${resumesData.length} resume(s)...`);
-      console.log(`Using model: ${config.embeddings.model}`);
-      await vectorStore.addResumes(resumesData);
+      console.log(`🔄 Generating embeddings and storing ${resumesData.length} resume(s)...`);
+      
+      // Use batch processing for better performance
+      const batchSize = 10;
+      await vectorStore.addResumesBatch(resumesData, batchSize);
       console.log();
     }
     
     // Summary
-    console.log("Ingestion complete!");
-    console.log(`Success: ${successCount}`);
-    console.log(`Errors: ${errorCount}`);
-    console.log(`Total: ${resumeFiles.length}`);
-    console.log(`Embeddings: Generated for ${resumesData.length} resumes`);
+    console.log("=" .repeat(60));
+    console.log("✅ INGESTION COMPLETE");
+    console.log("=" .repeat(60));
+    console.log(`📊 Statistics:`);
+    console.log(`  - Total files: ${resumeFiles.length}`);
+    console.log(`  - Successful: ${successCount}`);
+    console.log(`  - Errors: ${errorCount}`);
+    console.log(`  - Embeddings generated: ${resumesData.length}`);
+    console.log(`  - Warnings: ${warnings.length}`);
+    
+    if (warnings.length > 0) {
+      console.log(`\n⚠️  Files with warnings:`);
+      warnings.forEach(({ fileName, warnings: fileWarnings }) => {
+        console.log(`  - ${fileName}:`);
+        fileWarnings.forEach(w => console.log(`    • ${w}`));
+      });
+    }
+    console.log();
 
   } catch (error) {
-    console.error("Ingestion failed:", error instanceof Error ? error.message : String(error));
+    console.error("❌ Ingestion failed:", error instanceof Error ? error.message : String(error));
     throw error;
   } finally {
     // Close MongoDB connection
