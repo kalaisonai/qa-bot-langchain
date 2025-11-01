@@ -1,9 +1,9 @@
-import { BaseChatModel, type BaseChatModelParams } from "@langchain/core/language_models/chat_models";
-import { ChatGeneration, ChatGenerationChunk, ChatResult } from "@langchain/core/outputs";
+import { BaseChatModel, BaseChatModelParams } from "@langchain/core/language_models/chat_models";
+import { ChatGeneration, ChatResult } from "@langchain/core/outputs";
 import { CallbackManagerForLLMRun } from "@langchain/core/callbacks/manager";
-import { AIMessageChunk, BaseMessage, MessageContent, AIMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
+import { AIMessageChunk, BaseMessage, AIMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
 
-export interface ChatTestleafParams extends BaseChatModelParams {
+interface ChatTestleafParams extends BaseChatModelParams {
   apiKey?: string;
   model?: string;
   temperature?: number;
@@ -148,30 +148,5 @@ export class ChatTestleaf extends BaseChatModel {
       console.error("Error calling Testleaf API:", error);
       throw error;
     }
-  }
-
-  /**
-   * Streaming is not implemented for Testleaf
-   */
-  async *_streamResponseChunks(
-    messages: BaseMessage[],
-    options: this["ParsedCallOptions"],
-    runManager?: CallbackManagerForLLMRun
-  ): AsyncGenerator<ChatGenerationChunk> {
-    // For now, fall back to non-streaming
-    const result = await this._generate(messages, options, runManager);
-    
-    for (const generation of result.generations) {
-      yield new ChatGenerationChunk({
-        text: generation.text,
-        message: generation.message as AIMessageChunk,
-        generationInfo: generation.generationInfo
-      });
-    }
-  }
-
-  /** @ignore */
-  _combineLLMOutput() {
-    return {};
   }
 }
