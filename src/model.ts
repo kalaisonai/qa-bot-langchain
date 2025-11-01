@@ -74,7 +74,8 @@ export function createChatModel(): BaseChatModel {
           apiKey,
           model,
           temperature,
-          maxTokens: Number(process.env.MAX_TOKENS) || 4096
+          maxTokens: Number(process.env.MAX_TOKENS) || 4096,
+          baseUrl: process.env.TESTLEAF_BASE_URL,
         }) as unknown as BaseChatModel;
       }
 
